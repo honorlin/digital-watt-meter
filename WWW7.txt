@@ -1,0 +1,414 @@
+          
+      
+       ORG 0000H
+       JMP MAIN      
+       ORG 000BH
+       JMP TIM0
+       ORG 001BH
+       MOV TH1,#CFH
+       MOV TL1,#2CH
+       DJNZ 3BH,AGAIN2
+       MOV 3BH,#200
+       SETB FLAG2
+
+AGAIN2 RETI
+
+TIM0   MOV TH0,#ECH    ;2
+       MOV TL0,#78H   ;1000=03E8H;2      
+       DJNZ 3AH,AGAIN     ;2
+       SETB FLAG1
+AGAIN  RETI
+
+
+MAIN
+FLAG1  REG 20H.0
+FLAG2  REG 20H.1
+WT1    EQU 22H
+WT2    EQU 23H
+WT3    EQU 24H
+WT4    EQU 25H
+W1     EQU 26H 
+W2     EQU 27H     
+WST1   EQU 28H
+WST2   EQU 29H
+WS1    EQU 2AH 
+WS2    EQU 2BH     
+WS3    EQU 2CH
+WS4    EQU 2DH
+WS5    EQU 2EH
+WS6    EQU 2FH
+V      EQU 30H
+I      EQU 31H  
+NUMH   EQU 32H
+NUML   EQU 33H
+NUM11  EQU 34H
+NUM22  EQU 35H
+NUM33  EQU 36H
+NUM1   EQU 37H
+NUM2   EQU 38H
+NUM3   EQU 39H
+       MOV A,#FFH
+       MOV P0,A
+       MOV P2,A
+       MOV P1,A
+       MOV WT1,#0
+       MOV WT2,#0
+       MOV WT3,#0
+       MOV WT4,#0
+       MOV W1,#0
+       MOV W2,#0
+       MOV WS1,#0
+       MOV WS2,#0
+       MOV WS3,#0
+       MOV WS4,#0
+       MOV WS5,#0
+       MOV WS6,#0
+       MOV WST1,#0
+       MOV WST2,#0
+       MOV NUMH,#0
+       MOV NUML,#0
+       MOV NUM1,#0
+       MOV NUM2,#0
+       MOV NUM3,#0
+       MOV NUM11,#0
+       MOV NUM22,#0
+       MOV NUM33,#0
+       CLR FLAG1
+       CLR FLAG2
+       MOV DPTR,#TABLE
+       MOV TH0,#ECH
+       MOV TL0,#78H 
+    
+       MOV 3AH,#100
+       MOV 3BH,#200
+       MOV TMOD,#00010001B
+       SETB ET0
+       SETB ET1
+       SETB EA
+       CLR TF0
+       SETB TR0 
+
+
+LOOP   SETB P3.1  ;1; SELECT V
+       CLR  P3.2  ;1
+       SETB P3.2  ;1
+WAIT   JB P3.3,WAIT 
+       MOV A,P1
+
+       CLR P3.1     ;1 ;SELECT I
+       CLR P3.4     ;1
+       SETB P3.4    ;1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+WAIT2  JB P3.5,WAIT2  ;100
+       MOV B,P1       ;2
+      
+       PUSH B         ;2
+       MOV B,#17      ;2
+       DIV AB         ;4 
+       MOV V,A        ;1     
+       POP B          ;2
+       MOV A,B
+       MOV B,#17
+       DIV AB
+       MOV I,A                       ;4
+       MOV B,V        ;3
+       MUL AB         ;4
+      
+       CLR C          ;1
+       ADD A,WT1      ;1
+       MOV WT1,A      ;1
+       JNC GO         ;2
+       CLR C          ;1
+       MOV A,WT2        ;1
+       ADD A,#1 
+       MOV WT2,A
+       JNC GO         ;2
+       CLR C          ;1      
+       MOV A,WT3        ;1
+       ADD A,#1 
+       MOV WT3,A
+       JNC GO         ;2
+       MOV A,WT4        ;1
+       ADD A,#1 
+       MOV WT4,A
+GO     CLR C  
+       MOV A,NUML       ;1
+       ADD A,#1 
+       MOV NUML,A
+       JNC SSL
+       INC NUMH
+SSL    JB FLAG1,GETYES
+       JMP LOOP 
+
+GETYES CLR TR0
+       CLR FLAG2
+       MOV TH1,#CFH
+       MOV TL1,#2CH
+       SETB TR1
+       MOV WS1,#0
+       MOV WS2,#0
+       MOV WS3,#0
+       MOV WS4,#0
+       MOV WS5,#0
+       MOV WS6,#0
+       MOV NUM1,#0
+       MOV NUM2,#0
+       MOV NUM3,#0
+       MOV NUM11,#0
+       MOV NUM22,#0
+       MOV NUM33,#0
+      
+       MOV B,#9
+       MOV A,NUML
+       MUL AB
+       MOV NUM1,A
+       MOV NUM2,B
+       MOV B,#9
+       MOV A,NUMH
+       MUL AB
+       MOV NUM3,B
+       CLR C
+       ADD A,NUM2
+       MOV NUM2,A
+       JNC NGO
+       INC NUM3      
+  
+NGO    MOV A,NUM1
+       CJNE A,#33,N1;21
+       MOV NUM1,#0 
+       JMP NNN
+N1     JNC N2
+       MOV A,NUM2
+       CJNE A,#0,N3
+       MOV A,NUM3
+       CJNE A,#0,N4
+       JMP OOO
+N3     DEC NUM2
+       MOV A,NUM1
+       ADD A,#DFH
+       MOV NUM1,A
+       JMP NNN
+N4     DEC NUM3
+       MOV NUM2,#FFH 
+       MOV A,NUM1
+       ADD A,#DFH
+       MOV NUM1,A
+       JMP NNN
+N2     SUBB A,#33
+       MOV NUM1,A    
+       JMP NNN
+
+NNN    MOV A,NUM11
+       CLR C
+       ADD A,#1
+       MOV NUM11,A
+       JNC NGO
+       MOV A,NUM22
+       CLR C
+       ADD A,#1
+       MOV NUM22,A  
+       JNC NGO
+       INC NUM33
+       JMP NGO
+
+
+OOO    MOV A,WT1        ;2
+       CLR C            ; 1
+       CJNE A,NUM11,GG    ;2 
+       MOV WT1,#0        ;2
+       JMP XX            ;2
+GG     JNC YY1          ;2
+       MOV A,WT2
+       CJNE A,#0,YY2   ;2     
+       MOV A,WT3
+       CJNE A,#0,YY3   ;2
+       MOV A,WT4
+       CJNE A,#0,YY4   ;2
+       JMP OOO2           ;2             
+YY4    DEC WT4           ;1
+       MOV WT3,#FFH      ;2
+       MOV WT2,#FFH      ;2
+ 
+       MOV A,#FFH                  ;2
+       SUBB A,NUM11                  ;1
+       INC A
+       MOV B,WT1                  ;1
+       ADD A,B 
+       MOV WT1,A
+
+       JMP XX            ;2
+YY3    DEC WT3           ;1
+       MOV WT2,#FFH      ;2
+       
+       MOV A,#FFH                  ;2
+       SUBB A,NUM11                   ;1
+       INC A
+       MOV B,WT1                  ;1
+       ADD A,B 
+       MOV WT1,A
+     
+       JMP XX            ;2
+YY2    DEC WT2           ;1
+       
+       MOV A,#FFH                  ;2
+       SUBB A,NUM11                   ;1
+       INC A
+       MOV B,WT1                  ;1
+       ADD A,B 
+       MOV WT1,A
+     
+       JMP XX            ;2
+YY1    SUBB A,NUM11     ;1
+       MOV WT1,A         ;1
+
+XX     CLR C             ;1
+       MOV A,WT2         ;2
+       CJNE A,NUM22,GG2   ;2          
+       MOV WT2,#0        ;2
+       JMP XX1           ;2
+GG2    JNC ZZ2           ;2
+       MOV A,WT3
+       CJNE A,#0,ZZ3   ;2
+       MOV A,WT4
+       CJNE A,#0,ZZ4   ;2
+       JMP OOO2            ;2 
+ZZ4    DEC WT4           ;1
+       MOV WT3,#FFH      ;2
+
+       MOV A,#FFH                  ;2
+       SUBB A,NUM22                  ;1
+       INC A
+       MOV B,WT2                  ;1
+       ADD A,B 
+       MOV WT2,A       ;1
+ 
+       JMP XX1           ;2
+ZZ3    DEC WT3           ;1
+      
+       MOV A,#FFH                  ;2
+       SUBB A,NUM22                 ;1
+       INC A
+       MOV B,WT2                  ;1
+       ADD A,B 
+       MOV WT2,A       ;1
+
+       JMP XX1           ;2
+ZZ2    SUBB A,NUM22      ;1 
+       MOV WT2,A         ;1  
+
+XX1    MOV A,WT3
+       CLR C
+       CJNE A,NUM33,R1
+       MOV WT3,#0
+       JMP XX2
+R1     JNC R2
+       MOV A,WT4
+       CJNE A,#0,R3
+       JMP OOO2
+R3     DEC WT4
+       MOV A,#FFH 
+       SUBB A,NUM33                 ;1
+       INC A
+       MOV B,WT3                  ;1
+       ADD A,B 
+       MOV WT3,A   
+       JMP XX2
+R2     SUBB A,NUM33   
+       MOV WT3,A
+
+XX2    INC WS1           ;1
+       MOV A,WS1
+       CJNE A,#10,GGG ;2 
+       MOV WS1,#0             ;1
+       INC WS2              ;1
+       MOV A,WS2
+       CJNE A,#10,GGG ;2
+       MOV WS2,#0              ;1
+       INC WS3              ;1
+       MOV A,WS3
+       CJNE A,#10,GGG  ;2 
+       MOV WS3,#0;1  
+       INC WS4              ;1
+       MOV A,WS4
+       CJNE A,#10,GGG  ;2
+       MOV WS4,#0             ;1
+       INC WS5              ;1
+       MOV A,WS5
+       CJNE A,#10,GGG  ;2
+       MOV WS5,#0             ;1
+       INC WS6              ;1
+GGG    JMP OOO              ;2
+
+OOO2   JB FLAG2,NOSHOW   
+       CALL SHOW
+       JMP OOO2    
+
+NOSHOW CLR TR1
+       MOV WT1,#0
+       MOV WT2,#0
+       MOV WT3,#0
+       MOV WT4,#0
+       MOV NUMH,#0
+       MOV NUML,#0
+       MOV TH0,#ECH    ;2
+       MOV TL0,#78H
+       CLR FLAG1
+       MOV 3AH,#100
+       MOV 3BH,#200
+       SETB TR0
+       JMP LOOP          
+
+SHOW   PUSH A
+       MOV A,WS1
+       MOVC A,@A+DPTR
+       MOV P0,A 
+       CLR P2.2
+       CALL DELAY
+       ORL P2,#FFH
+       MOV A,WS2
+       MOVC A,@A+DPTR
+       MOV P0,A 
+       CLR P2.3
+       CALL DELAY
+       ORL P2,#FFH       
+       MOV A,WS3
+       MOVC A,@A+DPTR
+       MOV P0,A 
+       CLR P2.4
+       CALL DELAY
+       ORL P2,#FFH
+       MOV A,WS4
+       MOVC A,@A+DPTR
+       MOV P0,A 
+       CLR P2.5
+       CALL DELAY
+       ORL P2,#FFH    
+       MOV A,WS5
+       MOVC A,@A+DPTR
+       MOV P0,A 
+       CLR P2.6
+       CALL DELAY
+       ORL P2,#FFH
+       MOV A,WS6
+       MOVC A,@A+DPTR
+       MOV P0,A 
+       CLR P2.7
+       CALL DELAY
+       ORL P2,#FFH
+       POP A        
+       RET
+
+DELAY  MOV R3,#5
+DL1    MOV R4,#200
+DL2    DJNZ R4,DL2
+       DJNZ R3,DL1
+       RET 
+                                                                                                                                                                                                                                                            
+TABLE db 3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,6fh 
+
+       END
+
+   
+      
+
+
+
